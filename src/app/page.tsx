@@ -1,9 +1,9 @@
 "use client"
- 
+
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
- 
+
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -15,14 +15,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
- 
+
 const formSchema = z.object({
   sqlformat: z.string().min(1, {
-    message: "SQLの形を入力してください", 
+    message: "DBスキーマ情報を入力してください",
   }),
-  sqlcontent: z.string().min(1, { 
-    message: "分析したい内容を入力してください", 
+  sqlcontent: z.string().min(1, {
+    message: "分析したい内容を入力してください",
   }),
 })
 
@@ -49,8 +48,8 @@ export default function Home() {
             name="sqlformat"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>SQLの形を教えてください。</FormLabel>
-                <Textarea placeholder="ここにSQLの形を入力してください" {...field} />
+                <FormLabel>分析対象DBのスキーマを教えてください。</FormLabel>
+                <Textarea placeholder="ここにDBスキーマ情報を入力してください" {...field} />
                 <FormDescription>
                   注：行の情報とテーブルの関係などを入力する欄です。
                 </FormDescription>
