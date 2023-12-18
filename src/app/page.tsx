@@ -30,13 +30,14 @@ const formSchema = z.object({
 
 export default function Home() {
   function onSubmit(values: z.infer<typeof formSchema>) {
-    axios.post('http://127.0.0.1:8000/hoge', values)
+    axios.post('http://127.0.0.1:8000/hoge', {
+      sqlformat: values.sqlformat,
+      sqlcontent: values.sqlcontent
+    })
       .then(response => {
-        // レスポンスをコンソールに表示する
-        console.log('レスポンス:', response.data);
+        console.log('回答:', response.data);
       })
       .catch(error => {
-        // エラー処理をする
         console.error('送信エラー:', error);
       });
   }
