@@ -29,15 +29,6 @@ const formSchema = z.object({
 })
 
 export default function Home() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      sqlformat: "",
-      sqlcontent: "",
-    },
-  })
-
-
   function onSubmit(values: z.infer<typeof formSchema>) {
     axios.post('http://127.0.0.1:8000/hoge', values)
       .then(response => {
@@ -49,6 +40,14 @@ export default function Home() {
         console.error('送信エラー:', error);
       });
   }
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      sqlformat: "",
+      sqlcontent: "",
+    },
+  })
 
   return (
     <main className="flex min-h-screen flex-col items-center px-6 lg:px-24 py-12">
