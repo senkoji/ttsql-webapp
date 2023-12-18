@@ -16,6 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+
 const formSchema = z.object({
   sqlformat: z.string().min(1, {
     message: "DBスキーマ情報を入力してください",
@@ -34,9 +37,17 @@ export default function Home() {
     },
   })
 
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    alert('送信完了しました');
+    axios.post('http://127.0.0.1:8000/hoge', values)
+      .then(response => {
+        // レスポンスをコンソールに表示する
+        console.log('レスポンス:', response.data);
+      })
+      .catch(error => {
+        // エラー処理をする
+        console.error('送信エラー:', error);
+      });
   }
 
   return (
