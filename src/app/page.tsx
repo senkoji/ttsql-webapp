@@ -29,18 +29,25 @@ const formSchema = z.object({
 })
 
 export default function Home() {
+  const [responseMessage, setResponseMessage] = useState("");
+
   function onSubmit(values: z.infer<typeof formSchema>) {
+    const formattedSqlFormat = values.sqlformat.replace(/\r\n|\r|\n/g, "");
+    const formattedSqlContent = values.sqlcontent.replace(/\r\n|\r|\n/g, "");
+
     axios.post('http://127.0.0.1:8000/hoge', {
-      sqlformat: values.sqlformat,
-      sqlcontent: values.sqlcontent
-    })
+        sqlformat: formattedSqlFormat,
+        sqlcontent: formattedSqlContent
+      })
       .then(response => {
-        console.log('回答:', response.data);
+        setResponseMessage(JSON.stringify(response.data));
       })
       .catch(error => {
         console.error('送信エラー:', error);
+        setResponseMessage("エラーが発生しました");
       });
-  }
+    }
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -82,6 +89,22 @@ export default function Home() {
           <Button type="submit">送信</Button>
         </form>
       </Form>
+
+      {responseMessage && (
+        <div className="response-message">
+          <h3>回答:</h3>
+          <p>
+            {JSON.parse(responseMessage).sql_query
+              .split(/\s\s+/)                // 連続するスペースを分割する
+              .map((line: string, index: number) => (
+                <React.Fragment key={index}>
+                  {line}
+                  <br />
+                </React.Fragment>
+              ))}
+          </p>
+        </div>
+      )}
       </main>
   )
 }
