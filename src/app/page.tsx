@@ -40,12 +40,23 @@ export default function Home() {
         sqlcontent: formattedSqlContent
       })
       .then(response => {
-        setResponseMessage(JSON.stringify(response.data));
+        // レスポンスがJSON形式であることを確認
+        if (response.headers['content-type'].includes('application/json')) {
+          setResponseMessage(JSON.stringify(response.data));
+        } else {
+          setResponseMessage("レスポンスがJSON形式ではありません。");
+        }
       })
       .catch(error => {
-        console.error('送信エラー:', error);
-        setResponseMessage("エラーが発生しました");
+        // エラー時にもJSON形式であることを確認
+        if (error.response && error.response.data && error.response.headers['content-type'].includes('application/json')) {
+          setResponseMessage(JSON.stringify(error.response.data));
+        } else {
+          console.error('送信エラー:', error);
+          setResponseMessage("エラーが発生しました。");
+        }
       });
+
     }
 
 
@@ -94,14 +105,22 @@ export default function Home() {
         <div className="response-message">
           <h3>回答:</h3>
           <p>
-            {JSON.parse(responseMessage).sql_query
-              .split(/\s\s+/)                // 連続するスペースを分割する
-              .map((line: string, index: number) => (
-                <React.Fragment key={index}>
-                  {line}
-                  <br />
-                </React.Fragment>
-              ))}
+            {(() => {
+              try {
+                const parsed = JSON.parse(responseMessage);
+                return parsed.sql_query
+                  .split(/\s\s+/)                // 連続するスペースを分割する
+                  .map((line: string, index: string) => (
+                    <React.Fragment key={index}>
+                      {line}
+                      <br />
+                    </React.Fragment>
+                  ));
+              } catch (e) {
+                // JSONが解析できなかった場合のエラーメッセージ
+                return <span>サーバーからのレスポンスを表示できません。</span>;
+              }
+            })()}
           </p>
         </div>
       )}
