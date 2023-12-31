@@ -20,43 +20,67 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 
 const formSchema = z.object({
-  sqlformat: z.string().min(1, {
-    message: "DBスキーマ情報を入力してください",
-  }),
+  sqlformat: z.string().optional(),
   sqlcontent: z.string().min(1, {
     message: "分析したい内容を入力してください",
   }),
-})
+  userId: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.sqlformat && !data.userId) {
+    // sqlformat と userId 両方が未入力の場合
+    ctx.addIssue({
+      code: 'custom',
+      path: ['sqlformat'],
+      message: "DBスキーマ情報、または過去に取得したUserIDを入力してください",
+    });
+
+    ctx.addIssue({
+      code: 'custom',
+      path: ['userId'],
+      message: "DBスキーマ情報、または過去に取得したUserIDを入力してください",
+    });
+  }
+});
 
 export default function Home() {
-  const [responseMessage, setResponseMessage] = useState("");
+  const [responseMessage, setResponseMessage] = useState({ sql_query: "", user_id: "" });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const formattedSqlFormat = values.sqlformat.replace(/\r\n|\r|\n/g, "");
+    const formattedSqlFormat = values.sqlformat?.replace(/\r\n|\r|\n/g, "") || "";
     const formattedSqlContent = values.sqlcontent.replace(/\r\n|\r|\n/g, "");
 
     axios.post('http://127.0.0.1:8000/hoge', {
         sqlformat: formattedSqlFormat,
-        sqlcontent: formattedSqlContent
+        sqlcontent: formattedSqlContent,
+        user_id: values.userId
       })
       .then(response => {
-        // レスポンスがJSON形式であることを確認
+        // レスポンスがJSON形式であることを確認し、sql_queryとuser_idを保存
         if (response.headers['content-type'].includes('application/json')) {
-          setResponseMessage(JSON.stringify(response.data));
+          setResponseMessage({
+            sql_query: JSON.stringify(response.data.sql_query),
+            user_id: response.data.user_id  // user_idを追加
+          });
         } else {
-          setResponseMessage("レスポンスがJSON形式ではありません。");
+          setResponseMessage({ sql_query: "レスポンスがJSON形式ではありません。", user_id: "" });
         }
       })
       .catch(error => {
-        // エラー時にもJSON形式であることを確認
         if (error.response && error.response.data && error.response.headers['content-type'].includes('application/json')) {
-          setResponseMessage(JSON.stringify(error.response.data));
+          // エラー時のレスポンスデータをオブジェクトとしてセット
+          setResponseMessage({
+            sql_query: JSON.stringify(error.response.data.detail || "エラーが発生しました。"),
+            user_id: ""
+          });
         } else {
           console.error('送信エラー:', error);
-          setResponseMessage("エラーが発生しました。");
+          // エラー時のデフォルトメッセージをオブジェクトとしてセット
+          setResponseMessage({
+            sql_query: "エラーが発生しました。",
+            user_id: ""
+          });
         }
       });
-
     }
 
 
@@ -65,6 +89,7 @@ export default function Home() {
     defaultValues: {
       sqlformat: "",
       sqlcontent: "",
+      userId: "", // 新しいフィールドのデフォルト値
     },
   })
 
@@ -97,31 +122,41 @@ export default function Home() {
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="userId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>User IDを持っている場合は、こちらにUserIDを入力してください。</FormLabel>
+                <Textarea placeholder="User ID" {...field} />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <Button type="submit">送信</Button>
         </form>
       </Form>
 
-      {responseMessage && (
+      {responseMessage.sql_query && (
         <div className="response-message">
           <h3>回答:</h3>
           <p>
-            {(() => {
-              try {
-                const parsed = JSON.parse(responseMessage);
-                return parsed.sql_query
-                  .split(/\s\s+/)                // 連続するスペースを分割する
-                  .map((line: string, index: string) => (
-                    <React.Fragment key={index}>
-                      {line}
-                      <br />
-                    </React.Fragment>
-                  ));
-              } catch (e) {
-                // JSONが解析できなかった場合のエラーメッセージ
-                return <span>サーバーからのレスポンスを表示できません。</span>;
-              }
-            })()}
+            {responseMessage.sql_query
+              .split(/\s\s+/)                // 連続するスペースを分割する
+              .map((line: string, index: number) => (
+                <React.Fragment key={index}>
+                  {line}
+                  <br />
+                </React.Fragment>
+              ))
+            }
           </p>
+          {responseMessage.user_id && (
+            <>
+              <br />
+              <p>あなたのUser IDは {responseMessage.user_id} です。</p>
+            </>
+          )}
         </div>
       )}
       </main>
